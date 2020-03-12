@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Radiom</string>
+    <string name="title_home">Home</string>
+    <string name="title_my_stations">My stations</string>
+    <string name="title_genres">Genres</string>
+</resources>
