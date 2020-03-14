@@ -1,5 +1,6 @@
 package net.artux.radio.common;
 
+import android.os.IBinder;
 import android.support.v4.media.session.MediaSessionCompat;
 
 import net.artux.radio.model.Station;
@@ -13,6 +14,7 @@ public interface MainContract {
     }
 
     interface Presenter{
+        void onServiceConnect(IBinder service);
         void updateStatus(boolean playing);
         void onMedia();
         void detachView();

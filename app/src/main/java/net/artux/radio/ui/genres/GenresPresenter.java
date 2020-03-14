@@ -1,14 +1,14 @@
-package net.artux.radio.ui.home;
+package net.artux.radio.ui.genres;
 
 import net.artux.radio.common.BaseFragmentView;
 import net.artux.radio.common.BasePresenter;
 import net.artux.radio.model.Station;
 
-public class HomePresenter extends BasePresenter {
+public class GenresPresenter extends BasePresenter {
 
     private BaseFragmentView view;
 
-    HomePresenter(BaseFragmentView view) {
+    GenresPresenter(GenresFragment view){
         this.view = view;
     }
 
@@ -24,6 +24,6 @@ public class HomePresenter extends BasePresenter {
 
     @Override
     public void changeStation(Station station, int order) {
-        view.changeStation(station, order);
+
     }
 }

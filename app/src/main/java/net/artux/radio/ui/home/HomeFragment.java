@@ -22,8 +22,8 @@ import net.artux.radio.utils.StationsLoader;
 
 public class HomeFragment extends BaseFragmentView {
 
-    RecyclerView recyclerView;
-    HomePresenter presenter;
+    private RecyclerView recyclerView;
+    private HomePresenter presenter;
 
     @Nullable
     @Override
@@ -53,7 +53,7 @@ public class HomeFragment extends BaseFragmentView {
     }
 
     @Override
-    public void setList() {
+    public void setContent() {
         HomeViewAdapter homeViewAdapter = new HomeViewAdapter(getActivity(), StationsLoader.getStations(), presenter);
         recyclerView.setAdapter(homeViewAdapter);
     }

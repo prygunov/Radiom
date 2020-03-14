@@ -14,7 +14,6 @@ public abstract class BasePresenter {
 
     public abstract void viewIsReady();
     public abstract void showError();
-    public abstract void onServiceConnect(IBinder service);
     public abstract void changeStation(Station station, int order);
 
 }
