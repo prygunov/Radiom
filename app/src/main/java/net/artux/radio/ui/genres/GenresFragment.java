@@ -11,10 +11,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import net.artux.radio.R;
-import net.artux.radio.common.BaseFragmentView;
-import net.artux.radio.model.Station;
 
-public class GenresFragment extends BaseFragmentView {
+public class GenresFragment extends Fragment implements GenresView {
 
     private RecyclerView genresView;
     private GenresPresenter genresPresenter;
@@ -31,16 +29,15 @@ public class GenresFragment extends BaseFragmentView {
         genresView = view.findViewById(R.id.genresView);
         genresPresenter = new GenresPresenter(this);
 
-        genresPresenter.viewIsReady();
     }
 
     @Override
-    public void changeStation(Station station, int order) {
+    public void showRefresh() {
 
     }
 
     @Override
-    public void setContent() {
+    public void hideRefresh() {
 
     }
 

@@ -1,65 +1,85 @@
 package net.artux.radio.ui.home;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.TransitionInflater;
 
-import com.google.gson.Gson;
-
-import net.artux.radio.MediaService;
+import net.artux.radio.MainActivity;
 import net.artux.radio.R;
-import net.artux.radio.common.BaseFragmentView;
 import net.artux.radio.model.Station;
+import net.artux.radio.ui.station.StationFragment;
 import net.artux.radio.utils.StationsLoader;
 
-public class HomeFragment extends BaseFragmentView {
+import java.util.List;
+
+public class HomeFragment extends Fragment implements HomeView, HomeViewAdapter.OnItemClick {
 
     private RecyclerView recyclerView;
+    private HomeViewAdapter homeViewAdapter;
     private HomePresenter presenter;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_home, container, false);
+        View v = inflater.inflate(R.layout.fragment_home, container, false);
+        recyclerView = v.findViewById(R.id.stationsView);
+        homeViewAdapter = new HomeViewAdapter(this, StationsLoader.getStations());
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        recyclerView.setAdapter(homeViewAdapter);
+        return v;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        recyclerView = view.findViewById(R.id.stationsView);
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
-
         presenter = new HomePresenter(this);
-        presenter.viewIsReady();
     }
 
     @Override
-    public void changeStation(Station station, int order) {
-        Intent intent = new Intent(getActivity(), MediaService.class);
-        intent.setAction("change_station");
-        intent.putExtra("station", new Gson().toJson(station));
-        intent.putExtra("order", order);
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
 
-        Log.d("tag", station.title);
-        getActivity().startService(intent);
+        presenter.getStations();
     }
 
     @Override
-    public void setContent() {
-        HomeViewAdapter homeViewAdapter = new HomeViewAdapter(getActivity(), StationsLoader.getStations(), presenter);
-        recyclerView.setAdapter(homeViewAdapter);
+    public void showRefresh() {
+
+    }
+
+    @Override
+    public void hideRefresh() {
+
     }
 
     @Override
     public void showError() {
 
+    }
+
+    @Override
+    public void showStations(List<Station> stations) {
+        homeViewAdapter.addData(stations, true);
+        recyclerView.setAdapter(homeViewAdapter);
+    }
+
+    @Override
+    public void openStation(Station station, View view, String sharedName) {
+        setSharedElementReturnTransition(TransitionInflater.from(getActivity()).inflateTransition(R.transition.default_transition));
+        setExitTransition(TransitionInflater.from(getActivity()).inflateTransition(android.R.transition.no_transition));
+        if(getActivity()!=null)
+            ((MainActivity)getActivity()).replaceFragment(StationFragment.newInstance(station), view, sharedName);
+    }
+
+    @Override
+    public void onClick(Station station, View view, String sharedName) {
+        openStation(station, view, sharedName);
     }
 }

@@ -3,6 +3,7 @@ package net.artux.radio;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -14,13 +15,15 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.transition.TransitionInflater;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-
 import net.artux.radio.common.MainContract;
 import net.artux.radio.model.Stream;
+import net.artux.radio.ui.genres.GenresFragment;
 import net.artux.radio.ui.home.HomeFragment;
 
 public class MainActivity extends AppCompatActivity implements MainContract.View{
@@ -33,25 +36,46 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     MainPresenter presenter;
     MediaControllerCompat mediaController;
+    Fragment current;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = item -> {
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         switch (item.getItemId()) {
             case R.id.navigation_home:
-                fragmentTransaction.replace(R.id.container, new HomeFragment());
+                current = new HomeFragment();
+                fragmentTransaction.replace(R.id.container, current);
                 fragmentTransaction.commit();
                 return true;
             case R.id.navigation_my_stations:
 
                 return true;
             case R.id.navigation_genres:
-
+                current = new GenresFragment();
+                fragmentTransaction.replace(R.id.container, current);
+                fragmentTransaction.commit();
                 return true;
         }
 
         return false;
     };
+
+    public void replaceFragment(Fragment fragment, View view, String sharedName){
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+
+            fragment.setSharedElementEnterTransition(TransitionInflater.from(this).inflateTransition(R.transition.default_transition));
+            fragment.setEnterTransition(TransitionInflater.from(this).inflateTransition(android.R.transition.no_transition));
+        }
+
+        fragmentTransaction
+                .replace(R.id.container, fragment)
+                .addSharedElement(view, sharedName)
+                .addToBackStack(null)
+                .commit();
+    }
 
     ServiceConnection serviceConnection =  new ServiceConnection() {
         @Override
@@ -77,9 +101,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         BottomNavigationView navView = findViewById(R.id.nav_view);
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         presenter = new MainPresenter(this);
-        presenter.viewIsReady();
 
-        bind();
+        bindService();
     }
 
     public void onMedia(View view) {
@@ -133,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         }
     }
 
-    public void bind(){
+    public void bindService(){
         bindService(new Intent(getApplicationContext(), MediaService.class), serviceConnection, BIND_AUTO_CREATE);
     }
 

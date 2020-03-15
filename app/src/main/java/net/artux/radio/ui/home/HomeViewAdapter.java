@@ -1,9 +1,7 @@
 package net.artux.radio.ui.home;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,16 +16,15 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import net.artux.radio.R;
-import net.artux.radio.common.BasePresenter;
 import net.artux.radio.model.Station;
-import net.artux.radio.widget.SquareLayout;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class HomeViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class HomeViewAdapter extends RecyclerView.Adapter<HomeViewAdapter.StationViewHolder> {
 
 
-    public static class StationViewHolder extends RecyclerView.ViewHolder {
+    static class StationViewHolder extends RecyclerView.ViewHolder {
         View itemView;
         TextView stationTitle;
         ImageView stationLogo;
@@ -38,17 +35,45 @@ public class HomeViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             stationTitle = itemView.findViewById(R.id.stationTitle);
             stationLogo = itemView.findViewById(R.id.stationLogo);
         }
+
+        void bind(Station st, int pos, OnItemClick itemClickListener){
+            Picasso.get()
+                    .load(st.imageUrl)
+                    .into(stationLogo, new Callback() {
+                        @Override
+                        public void onSuccess() {
+                            Bitmap b = ((BitmapDrawable) stationLogo.getDrawable()).getBitmap();
+                            Palette p = Palette.from(b).generate();
+                            int color = p.getDarkVibrantColor(stationLogo.getContext().getResources().getColor(R.color.defTextColor));
+                            stationTitle.setTextColor(color);
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+
+                        }
+                    });
+            stationTitle.setText(st.title);
+            stationTitle.setTransitionName(""+pos);
+            itemView.setOnClickListener(view -> itemClickListener.onClick(st, stationTitle, ""+pos));
+        }
     }
 
-    List<Station> stations;
-    BasePresenter basePresenter;
-    Context context;
+    interface OnItemClick{
+        void onClick(Station station, View view, String sharedName);
+    }
+
+    private List<Station> stations = new ArrayList<>();
+    private OnItemClick clickListener;
 
 
-    HomeViewAdapter(Context context, List<Station> stations, BasePresenter basePresenter){
-        this.context = context;
+    HomeViewAdapter(OnItemClick clickListener){
+        this.clickListener = clickListener;
+    }
+
+    HomeViewAdapter(OnItemClick clickListener, List<Station> stations){
+        this.clickListener = clickListener;
         this.stations = stations;
-        this.basePresenter = basePresenter;
     }
 
     @NonNull
@@ -59,40 +84,21 @@ public class HomeViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        StationViewHolder st = (StationViewHolder) holder;
-        Picasso.get()
-                .load(stations.get(position).imageUrl)
-                .into(st.stationLogo, new Callback() {
-                    @Override
-                    public void onSuccess() {
-                        Bitmap b = ((BitmapDrawable) st.stationLogo.getDrawable()).getBitmap();
-                        Palette p = Palette.from(b).generate();
-                        int color = p.getDarkVibrantColor(context.getResources().getColor(R.color.defTextColor));
-                        st.stationTitle.setTextColor(color);
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-
-                    }
-                });
-        st.stationTitle.setText(stations.get(position).title);
-        st.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d("tag", "onClick");
-
-
-
-                basePresenter.changeStation(stations.get(position), 0);
-            }
-        });
-
+    public void onBindViewHolder(@NonNull StationViewHolder holder, int position) {
+        holder.bind(stations.get(position), position, clickListener);
     }
 
     @Override
     public int getItemCount() {
         return stations.size();
+    }
+
+    void addData(List<Station> stations, boolean clear){
+        if (clear){
+            stations.clear();
+        }
+
+        this.stations.addAll(stations);
+        notifyDataSetChanged();
     }
 }
