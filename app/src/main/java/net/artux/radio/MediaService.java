@@ -241,6 +241,7 @@ public class MediaService extends MediaBrowserServiceCompat implements ExoPlayer
             registerReceiver(
                     becomingNoisyReceiver,
                     new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+            becomingNoisyReceiver.setResultCode(200);
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PLAYING);
         }
@@ -291,12 +292,15 @@ public class MediaService extends MediaBrowserServiceCompat implements ExoPlayer
             mSession.setPlaybackState(
                     stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED,
                             PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
-            if (becomingNoisyReceiver != null)
+            if (becomingNoisyReceiver != null  && becomingNoisyReceiver.getResultCode()==200)
                 unregisterReceiver(becomingNoisyReceiver);
             stopSelf();
         }
 
         final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
+
+            public boolean registered = false;
+
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction()))
