@@ -15,6 +15,7 @@ public class StationsLoader implements MainContract.Repository {
         Station station = new Station();
 
         station.title = "Radio Record";
+        station.desc = "desc";
         station.imageUrl = "https://pbs.twimg.com/profile_images/1164866900742082563/-zuRQoYW_400x400.jpg";
 
         Stream stream = new Stream();
@@ -34,6 +35,7 @@ public class StationsLoader implements MainContract.Repository {
         stream.title = "Europa Plus Main";
         stream.types.put(Qualities.b256, " http://ep256.streamr.ru");
         station.title = "Europa Plus";
+        station.desc = "desc";
         station.imageUrl = "https://europaplus.ru/media/logotype.e7ee9233.png";
         station.streams.add(stream);
         stations.add(station);

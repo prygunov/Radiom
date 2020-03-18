@@ -1,23 +1,20 @@
 package net.artux.radio;
 
 import android.os.IBinder;
-import android.support.v4.media.session.MediaControllerCompat;
 
 import androidx.annotation.NonNull;
 
-import net.artux.radio.common.BasePresenter;
 import net.artux.radio.common.MainContract;
-import net.artux.radio.model.Station;
 
 
-public class MainPresenter extends BasePresenter implements MainContract.Presenter {
+public class MainPresenter implements MainContract.Presenter {
 
     @NonNull
     private final MainContract.View view;
 
     private static String TAG = "Presenter";
 
-    public MainPresenter(MainContract.View view){
+    MainPresenter(MainContract.View view){
         this.view = view;
     }
 
@@ -41,24 +38,10 @@ public class MainPresenter extends BasePresenter implements MainContract.Present
 
     }
 
-    @Override
-    public void viewIsReady() {
-
-    }
-
-    @Override
-    public void showError() {
-
-    }
 
     @Override
     public void onServiceConnect(IBinder service) {
         view.registerCallback(((MediaService.MediaServiceBinder) service).getMediaSessionToken());
-    }
-
-    @Override
-    public void changeStation(Station station, int order) {
-
     }
 
 }
