@@ -64,8 +64,6 @@ public class MediaService extends MediaBrowserServiceCompat implements ExoPlayer
                             callback.onPlay();
                             break;
                         case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                            callback.onPause();
-                            break;
                         default:
                             callback.onPause();
                             break;
@@ -133,12 +131,14 @@ public class MediaService extends MediaBrowserServiceCompat implements ExoPlayer
 
                 @Override
                 public void onPrepareLoad(Drawable placeHolderDrawable) {
-                    MediaMetadataCompat metadata = metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, ((BitmapDrawable) placeHolderDrawable).getBitmap())
+                    metadataBuilder
                             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "Загрузка названия..")
                             .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "")
-                            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentStream.title)
-                            .build();
-                    mSession.setMetadata(metadata);
+                            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentStream.title);
+                    if(placeHolderDrawable!=null)
+                        metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, ((BitmapDrawable) placeHolderDrawable).getBitmap());
+
+                    mSession.setMetadata(metadataBuilder.build());
 
                     Bundle extras = new Bundle();
                     extras.putSerializable("stream", currentStream);
@@ -241,7 +241,6 @@ public class MediaService extends MediaBrowserServiceCompat implements ExoPlayer
             registerReceiver(
                     becomingNoisyReceiver,
                     new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
-            becomingNoisyReceiver.setResultCode(200);
 
             refreshNotificationAndForegroundStatus(PlaybackStateCompat.STATE_PLAYING);
         }
@@ -292,15 +291,12 @@ public class MediaService extends MediaBrowserServiceCompat implements ExoPlayer
             mSession.setPlaybackState(
                     stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED,
                             PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1).build());
-            if (becomingNoisyReceiver != null  && becomingNoisyReceiver.getResultCode()==200)
+            if (becomingNoisyReceiver != null)
                 unregisterReceiver(becomingNoisyReceiver);
             stopSelf();
         }
 
         final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
-
-            public boolean registered = false;
-
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction()))
