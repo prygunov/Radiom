@@ -7,36 +7,47 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.transition.TransitionInflater;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import net.artux.radio.common.MainContract;
-import net.artux.radio.model.Stream;
 import net.artux.radio.ui.genres.GenresFragment;
 import net.artux.radio.ui.home.HomeFragment;
 
-public class MainActivity extends AppCompatActivity implements MainContract.View{
+public class MainActivity extends AppCompatActivity implements MainContract.View, View.OnClickListener {
 
     static String TAG = "MainActivity";
 
-    ImageButton imageButton;
+    ImageButton playingButton0;
+    ImageButton playingButton1;
     TextView titleView;
     TextView artistView;
+    View mediaBar;
+    View closeBtn;
 
     MainPresenter presenter;
     MediaControllerCompat mediaController;
     Fragment current;
+
+    BottomSheetBehavior bottomSheetBehavior;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = item -> {
@@ -64,8 +75,6 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-
-
             fragment.setSharedElementEnterTransition(TransitionInflater.from(this).inflateTransition(R.transition.default_transition));
             fragment.setEnterTransition(TransitionInflater.from(this).inflateTransition(android.R.transition.no_transition));
         }
@@ -95,12 +104,52 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        imageButton = findViewById(R.id.mediaButton);
+        playingButton0 = findViewById(R.id.mediaButton0);
+        playingButton1 = findViewById(R.id.mediaButton1);
         titleView = findViewById(R.id.titleView);
         artistView = findViewById(R.id.artistView);
+        mediaBar = findViewById(R.id.mediaBar);
+        closeBtn = findViewById(R.id.closeBtn);
+
+        LinearLayout llBottomSheet = findViewById(R.id.bottom_sheet);
         BottomNavigationView navView = findViewById(R.id.nav_view);
+
+        mediaBar.setOnClickListener(this);
+        closeBtn.setOnClickListener(this);
+
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         presenter = new MainPresenter(this);
+
+        bottomSheetBehavior = BottomSheetBehavior.from(llBottomSheet);
+
+        navView.getRootView().getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            bottomSheetBehavior.setPeekHeight(navView.getHeight() + llBottomSheet.getChildAt(0).getHeight());
+            CoordinatorLayout.LayoutParams lp = new CoordinatorLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(0,0,0,navView.getHeight() + llBottomSheet.getChildAt(0).getHeight());
+            findViewById(R.id.container).setLayoutParams(lp);
+        });
+
+        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                if(newState == BottomSheetBehavior.STATE_EXPANDED){
+                    navView.setVisibility(View.GONE);
+                    mediaBar.setVisibility(View.INVISIBLE);
+                    closeBtn.setVisibility(View.VISIBLE);
+                }
+                if(newState == BottomSheetBehavior.STATE_COLLAPSED)
+                    closeBtn.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                navView.setVisibility(View.VISIBLE);
+                mediaBar.setVisibility(View.VISIBLE);
+                navView.setAlpha(1-slideOffset);
+                mediaBar.setAlpha(1-slideOffset);
+                closeBtn.setAlpha(slideOffset);
+            }
+        });
 
         bindService();
     }
@@ -115,24 +164,25 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         }
     }
 
-    public void updateStatus(PlaybackStateCompat state) {
+    public void updateStatus(PlaybackStateCompat state, MediaMetadataCompat metadataCompat) {
         if (state == null)
             return;
         boolean playing =
                 state.getState() == PlaybackStateCompat.STATE_PLAYING;
-        if (playing)
-            imageButton.setImageDrawable(getResources().getDrawable(R.drawable.ic_media_pause));
-        else
-            imageButton.setImageDrawable(getResources().getDrawable(R.drawable.ic_media_play));
-        if (state.getExtras() != null) {
-            Stream stream = (Stream) state.getExtras().getSerializable("stream");
-            if (stream != null && stream.mediaData != null) {
-                artistView.setText(stream.mediaData.artist);
-                titleView.setText(stream.mediaData.title);
-            }
+        if (playing) {
+            playingButton0.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_media_pause));
+            playingButton1.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_media_pause));
+        } else {
+            playingButton0.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_media_play));
+            playingButton1.setImageDrawable(getResources().getDrawable(android.R.drawable.ic_media_play));
         }
-
-
+        if (metadataCompat != null) {
+            artistView.setText(metadataCompat.getText(MediaMetadataCompat.METADATA_KEY_ARTIST));
+            titleView.setText(metadataCompat.getText(MediaMetadataCompat.METADATA_KEY_TITLE));
+            ((TextView) findViewById(R.id.artistLabel)).setText(metadataCompat.getText(MediaMetadataCompat.METADATA_KEY_ARTIST));
+            ((TextView) findViewById(R.id.titleLabel)).setText(metadataCompat.getText(MediaMetadataCompat.METADATA_KEY_TITLE));
+            ((ImageView) findViewById(R.id.streamLogo)).setImageBitmap(metadataCompat.getBitmap(MediaMetadataCompat.METADATA_KEY_ART));
+        }
     }
 
     @Override
@@ -144,12 +194,15 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
                     new MediaControllerCompat.Callback() {
                         @Override
                         public void onPlaybackStateChanged(PlaybackStateCompat state) {
-                            updateStatus(state);
+                            updateStatus(state, mediaController.getMetadata());
+                        }
+
+                        @Override
+                        public void onSessionReady() {
+                            super.onSessionReady();
+                            updateStatus(mediaController.getPlaybackState(), mediaController.getMetadata());
                         }
                     });
-            if(mediaController.getPlaybackState()!=null){
-                updateStatus(mediaController.getPlaybackState());
-            }
         } catch (RemoteException e) {
             mediaController = null;
             e.fillInStackTrace().printStackTrace();
@@ -164,5 +217,19 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     protected void onDestroy() {
         super.onDestroy();
         unbindService(serviceConnection);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.mediaBar:
+                if(bottomSheetBehavior.getState()==BottomSheetBehavior.STATE_COLLAPSED)
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                break;
+            case R.id.closeBtn:
+                if(bottomSheetBehavior.getState()==BottomSheetBehavior.STATE_EXPANDED)
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                break;
+        }
     }
 }
